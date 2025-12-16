@@ -7,7 +7,7 @@ namespace HighFi.Builders;
 
 public static class TelemetryBuilder
 {
-    private const string OtelCollectorUrl = "http://localhost:4317/v1/metrics";
+    private const string OtelCollectorUrl = "http://localhost:4317";
 
     public static IServiceCollection AddTelemetry(this IServiceCollection services)
     {
