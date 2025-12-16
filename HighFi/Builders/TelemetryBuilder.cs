@@ -8,7 +8,7 @@ namespace HighFi.Builders;
 public static class TelemetryBuilder
 {
     private const string OtelCollectorUrl = "http://localhost:4317/v1/metrics";
-    
+
     public static IServiceCollection AddTelemetry(this IServiceCollection services)
     {
         services
@@ -18,10 +18,7 @@ public static class TelemetryBuilder
                     serviceNamespace: "ac-infinity",
                     serviceInstanceId: "ac-infinity",
                     serviceVersion: "1.0.0")
-                .AddAttributes(new KeyValuePair<string, object>[]
-                {
-                    new("deployment.environment", "production")
-                }))
+            )
             .WithMetrics(metrics => metrics
                 .AddMeter("AcInfinityBridge")
                 .AddOtlpExporter((options, readerOptions) =>
@@ -35,4 +32,3 @@ public static class TelemetryBuilder
         return services;
     }
 }
-

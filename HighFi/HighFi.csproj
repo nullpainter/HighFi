@@ -4,10 +4,8 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
         <WindowsSdkPackageVersion>10.0.19041.41</WindowsSdkPackageVersion>
-        <LangVersion>preview</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
 
     <ItemGroup>

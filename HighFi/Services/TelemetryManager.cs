@@ -36,11 +36,7 @@ public class TelemetryManager : IDisposable
             name: "ac_infinity_humidity",
             observeValue: () =>
             {
-                if (CurrentHumidity.HasValue)
-                {
-                    logger.LogTrace("Reporting humidity {Humidity}%", CurrentHumidity.Value);
-                    return CurrentHumidity.Value;
-                }
+                if (CurrentHumidity.HasValue) return CurrentHumidity.Value;
 
                 logger.LogTrace("Humidity not yet available, skipping");
                 return double.NaN; // Return NaN to indicate no value
@@ -52,22 +48,13 @@ public class TelemetryManager : IDisposable
             name: "ac_infinity_rssi",
             observeValue: () =>
             {
-                if (CurrentRssi.HasValue)
-                {
-                    logger.LogTrace("Reporting RSSI {Rssi} dBm", CurrentRssi.Value);
-                    return CurrentRssi.Value;
-                }
+                if (CurrentRssi.HasValue) return CurrentRssi.Value;
 
                 logger.LogTrace("RSSI not yet available, skipping");
                 return double.NaN; // Return NaN to indicate no value
             },
-            unit: "dBm",
             description: "Current Bluetooth signal strength (RSSI) from AC Infinity device");
     }
-
-    public void RecordTemperature(double temperature) => CurrentTemperature = temperature;
-    public void RecordHumidity(double humidity) => CurrentHumidity = humidity;
-    public void RecordRssi(short rssi) => CurrentRssi = rssi;
 
     public void Dispose() => _meter.Dispose();
 }

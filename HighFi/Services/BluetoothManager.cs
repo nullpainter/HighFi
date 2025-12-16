@@ -56,7 +56,7 @@ public class BluetoothManager(
         }
 
         logger.LogInformation("Found AC Infinity device: {DeviceName} ({Id})", _device.Name, _device.Id);
-        telemetryManager.RecordRssi(_lastRssi);
+        telemetryManager.CurrentRssi = _lastRssi;
 
         try
         {

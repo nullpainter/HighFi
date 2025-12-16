@@ -10,11 +10,10 @@ public class SensorDataHandler(
     public void HandleSensorData(byte[] data)
     {
         if (dataParser.ParseSensorData(data) is not { } sensorData) return;
-        
+
         logger.LogInformation("Temperature: {Temperature:F2}°C, humidity: {Humidity:F2}%", sensorData.Temperature, sensorData.Humidity);
 
-        telemetryManager.RecordTemperature(sensorData.Temperature);
-        telemetryManager.RecordHumidity(sensorData.Humidity);
+        telemetryManager.CurrentTemperature = sensorData.Temperature;
+        telemetryManager.CurrentHumidity = sensorData.Humidity;
     }
 }
-
