@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Windows.Devices.Bluetooth.Advertisement;
 using InTheHand.Bluetooth;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -112,49 +111,50 @@ public class BluetoothManager(
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            var tcs = new TaskCompletionSource<ulong?>();
             
-            var watcher = new BluetoothLEAdvertisementWatcher
-            {
-                ScanningMode = BluetoothLEScanningMode.Active
-            };
-
-            watcher.Received += (_, args) =>
-            {
-                if (args.Advertisement.LocalName != DeviceName) return;
-                
-                _lastRssi = args.RawSignalStrengthInDBm;
-                logger.LogDebug("Found matching device: {Name} ({Address}), RSSI: {Rssi} dBm", DeviceName, args.BluetoothAddress, _lastRssi);
-                tcs.TrySetResult(args.BluetoothAddress);
-            };
-
-            watcher.Start();
-
-            // Wait for device or timeout
+            // Create a cancellation token that times out
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
             cts.CancelAfter(ScanTimeout);
             
+            BluetoothDevice? foundDevice = null;
+            var deviceFoundSignal = new TaskCompletionSource<bool>();
+            
+            void OnAdvertisementReceived(object? sender, BluetoothAdvertisingEvent args)
+            {
+                if (foundDevice is not null) return; 
+                if (args.Name != DeviceName) return;
+                
+                _lastRssi = args.Rssi;
+                logger.LogDebug("Found matching device: {Name} ({Address}), RSSI: {Rssi} dBm", 
+                    DeviceName, args.Device.Id, _lastRssi);
+                
+                foundDevice = args.Device;
+                deviceFoundSignal.TrySetResult(true);
+            }
+            
+            // Use event-based scanning for cross-platform compatibility
+            Bluetooth.AdvertisementReceived += OnAdvertisementReceived;
+            
             try
             {
-                await using (cts.Token.Register(() => tcs.TrySetResult(null)))
+                await Bluetooth.RequestLEScanAsync(new BluetoothLEScanOptions
                 {
-                    var bluetoothAddress = await tcs.Task;
-                    watcher.Stop();
-                    
-                    logger.LogDebug("Scan completed in {Elapsed}", stopwatch.Elapsed);
-                    
-                    if (bluetoothAddress.HasValue)
-                    {
-                        var device = await BluetoothDevice.FromIdAsync(bluetoothAddress.Value.ToString("X12"));
-                        return device;
-                    }
+                    AcceptAllAdvertisements = true
+                });
+                
+                // Wait for device found or timeout
+                using (cts.Token.Register(() => deviceFoundSignal.TrySetResult(false)))
+                {
+                    await deviceFoundSignal.Task;
                 }
             }
-            catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+            finally
             {
-                watcher.Stop();
-                logger.LogDebug("Scan timed out after {Elapsed}", stopwatch.Elapsed);
+                Bluetooth.AdvertisementReceived -= OnAdvertisementReceived;
             }
+            
+            logger.LogDebug("Scan completed in {Elapsed}", stopwatch.Elapsed);
+            return foundDevice;
         }
         catch (Exception ex)
         {

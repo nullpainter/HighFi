@@ -2,10 +2,15 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
-        <WindowsSdkPackageVersion>10.0.19041.41</WindowsSdkPackageVersion>
+        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RuntimeIdentifiers>win-x64;win-arm64;linux-arm64</RuntimeIdentifiers>
+    </PropertyGroup>
+
+    <!-- Windows-specific SDK package version -->
+    <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0-windows10.0.19041.0'))">
+        <WindowsSdkPackageVersion>10.0.19041.41</WindowsSdkPackageVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,7 +22,7 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
         <PackageReference Include="OpenTelemetry" Version="1.14.0" />
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />        
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
     </ItemGroup>
 
 </Project>
