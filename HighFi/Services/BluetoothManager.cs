@@ -211,8 +211,17 @@ public class BluetoothManager(
             if (_notifyCharacteristic != null)
             {
                 _notifyCharacteristic.CharacteristicValueChanged -= OnCharacteristicValueChanged;
-                await _notifyCharacteristic.StopNotificationsAsync();
-                logger.LogInformation("Unsubscribed from notifications");
+                
+                try
+                {
+                    await _notifyCharacteristic.StopNotificationsAsync();
+                    logger.LogInformation("Unsubscribed from notifications");
+                }
+                catch (NotSupportedException)
+                {
+                    logger.LogDebug("StopNotifications not supported on this platform, skipping");
+                }
+                
                 _notifyCharacteristic = null;
             }
 
