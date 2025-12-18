@@ -30,6 +30,7 @@ public class TelemetryManager : IDisposable
                 logger.LogTrace("ObservableGauge callback: Temperature not yet available, skipping");
                 return double.NaN; // Return NaN to indicate no value
             },
+            unit: "°C",
             description: "Current temperature reading from AC Infinity device");
 
         // Use ObservableGauge to report the current humidity value
@@ -42,6 +43,7 @@ public class TelemetryManager : IDisposable
                 logger.LogTrace("Humidity not yet available, skipping");
                 return double.NaN; // Return NaN to indicate no value
             },
+            unit: "%",
             description: "Current humidity reading from AC Infinity device");
 
         // Use ObservableGauge to report the current VPD (Vapor Pressure Deficit) value

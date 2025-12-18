@@ -86,7 +86,7 @@ public class BluetoothManager(
 
         _notifyCharacteristic.CharacteristicValueChanged += OnCharacteristicValueChanged;
         await _notifyCharacteristic.StartNotificationsAsync();
-        logger.LogTrace("Subscribed to notifications");
+        logger.LogInformation("Subscribed to notifications");
 
         await MonitorConnectionAsync(stoppingToken);
     }
@@ -116,20 +116,20 @@ public class BluetoothManager(
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
             cts.CancelAfter(ScanTimeout);
             
-            BluetoothDevice? foundDevice = null;
-            var deviceFoundSignal = new TaskCompletionSource<bool>();
+            var deviceFoundSignal = new TaskCompletionSource<BluetoothDevice?>(TaskCreationOptions.RunContinuationsAsynchronously);
             
             void OnAdvertisementReceived(object? sender, BluetoothAdvertisingEvent args)
             {
-                if (foundDevice is not null) return; 
                 if (args.Name != DeviceName) return;
                 
                 _lastRssi = args.Rssi;
-                logger.LogDebug("Found matching device: {Name} ({Address}), RSSI: {Rssi} dBm", 
-                    DeviceName, args.Device.Id, _lastRssi);
+                var device = args.Device;
                 
-                foundDevice = args.Device;
-                deviceFoundSignal.TrySetResult(true);
+                logger.LogDebug("Found matching device: {Name} ({Address}), RSSI: {Rssi} dBm", 
+                    DeviceName, device.Id, _lastRssi);
+                
+                // Pass the device directly through the signal to avoid race conditions
+                deviceFoundSignal.TrySetResult(device);
             }
             
             // Use event-based scanning for cross-platform compatibility
@@ -143,18 +143,21 @@ public class BluetoothManager(
                 });
                 
                 // Wait for device found or timeout
-                using (cts.Token.Register(() => deviceFoundSignal.TrySetResult(false)))
+                using (cts.Token.Register(() => deviceFoundSignal.TrySetResult(null)))
                 {
-                    await deviceFoundSignal.Task;
+                    var device = await deviceFoundSignal.Task;
+                    logger.LogDebug("Scan completed in {Elapsed}, device found: {Found}", stopwatch.Elapsed, device is not null);
+                    return device;
                 }
             }
             finally
             {
                 Bluetooth.AdvertisementReceived -= OnAdvertisementReceived;
             }
-            
-            logger.LogDebug("Scan completed in {Elapsed}", stopwatch.Elapsed);
-            return foundDevice;
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            logger.LogDebug("Device discovery cancelled");
         }
         catch (Exception ex)
         {
