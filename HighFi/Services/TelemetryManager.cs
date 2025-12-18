@@ -9,6 +9,7 @@ public class TelemetryManager : IDisposable
 
     public double? CurrentTemperature { get; set; }
     public double? CurrentHumidity { get; set; }
+    public double? CurrentVpd { get; set; }
     public short? CurrentRssi { get; set; }
 
     public TelemetryManager(ILogger<TelemetryManager> logger)
@@ -43,6 +44,19 @@ public class TelemetryManager : IDisposable
             },
             description: "Current humidity reading from AC Infinity device");
 
+        // Use ObservableGauge to report the current VPD (Vapor Pressure Deficit) value
+        _meter.CreateObservableGauge(
+            name: "ac_infinity_vpd",
+            observeValue: () =>
+            {
+                if (CurrentVpd.HasValue) return CurrentVpd.Value;
+
+                logger.LogTrace("VPD not yet available, skipping");
+                return double.NaN; // Return NaN to indicate no value
+            },
+            unit: "kPa",
+            description: "Current Vapor Pressure Deficit (VPD) calculated from temperature and humidity");
+
         // Use ObservableGauge to report the current RSSI (signal strength) value
         _meter.CreateObservableGauge(
             name: "ac_infinity_rssi",
@@ -53,6 +67,7 @@ public class TelemetryManager : IDisposable
                 logger.LogTrace("RSSI not yet available, skipping");
                 return double.NaN; // Return NaN to indicate no value
             },
+            unit: "dBm",
             description: "Current Bluetooth signal strength (RSSI) from AC Infinity device");
     }
 
